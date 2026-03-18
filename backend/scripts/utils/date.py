@@ -21,10 +21,18 @@ def format_date(d: date) -> str:
 
 def get_dates(date_str: str) -> list[date]:
     def parse(s: str) -> date:
-        year, month, day = map(int, s.split('/'))
+        s = s.strip()
+        if '/' in s:
+            year, month, day = map(int, s.split('/'))
+        else:
+            year, month, day = map(int, s.split('-'))
         return date(year, month, day)
 
-    if '-' in date_str:
+    # A date range uses format "YYYY/MM/DD-YYYY/MM/DD" or "YYYY-MM-DD-YYYY-MM-DD"
+    # ISO dates like "2026-03-18" are single dates, not ranges
+    # Detect range by counting separators: a range has 2 date components
+    if '/' in date_str and '-' in date_str:
+        # slash-format range: "2026/03/18-2026/03/20"
         start_str, end_str = date_str.split('-', 1)
         start_date, end_date = parse(start_str), parse(end_str)
         delta = (end_date - start_date).days
