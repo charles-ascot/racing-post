@@ -3,9 +3,9 @@ import sys
 from datetime import date
 from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
 # Add scripts directory to sys.path to allow imports within scripts to work
@@ -24,10 +24,18 @@ app = FastAPI(title="RPScrape API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://rpscrape.thync.online", "https://racing-post.pages.dev"],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)},
+        headers={"Access-Control-Allow-Origin": "*"},
+    )
 
 class ScrapeRequest(BaseModel):
     dates: Optional[List[str]] = None
