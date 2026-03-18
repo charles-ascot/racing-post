@@ -10,7 +10,9 @@ def clean_race(race: str) -> str:
     return race.strip()
 
 
-def clean_string(string: str) -> str:
+def clean_string(string: str | None) -> str | None:
+    if string is None:
+        return None
     return string.strip().replace(',', '').replace('\n', '').replace('\r', '').replace('\t', '')
 
 
