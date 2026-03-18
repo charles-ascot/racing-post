@@ -20,6 +20,8 @@
     "tailwind-merge": "latest"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1",
+    "wrangler": "^3",
     "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",
     "@types/react": "^19.2.14",

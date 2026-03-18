@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+export const runtime = "edge";
 
 export const metadata: Metadata = {
   title: "RPScrape Dashboard",
@@ -16,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-[#E4E3E0] text-[#141414]`}>
+      <body className="bg-[#E4E3E0] text-[#141414] font-sans">
         {children}
       </body>
     </html>
