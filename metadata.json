@@ -1,0 +1,5 @@
+{
+  "name": "RPScrape v2",
+  "description": "A high-precision horse racing data extraction engine with a FastAPI backend and Next.js frontend.",
+  "requestFramePermissions": []
+}
