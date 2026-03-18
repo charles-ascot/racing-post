@@ -4,6 +4,7 @@ from datetime import date
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
@@ -20,6 +21,13 @@ from scripts.utils.course import courses as get_courses
 from scripts.utils.region import get_region
 
 app = FastAPI(title="RPScrape API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://rpscrape.thync.online", "https://racing-post.pages.dev"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class ScrapeRequest(BaseModel):
     dates: Optional[List[str]] = None

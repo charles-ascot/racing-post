@@ -1,4 +1,6 @@
 import { useState } from "react";
+
+const API = import.meta.env.VITE_BACKEND_URL || "";
 import { Play, Download, Calendar, ChevronDown, ChevronRight, Loader } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -145,8 +147,8 @@ export default function App() {
     setRacecards(null);
     try {
       const url = region
-        ? `/api/racecards/${date}?region=${region.toLowerCase()}`
-        : `/api/racecards/${date}`;
+        ? `${API}/racecards/${date}?region=${region.toLowerCase()}`
+        : `${API}/racecards/${date}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -167,7 +169,7 @@ export default function App() {
     setScrapeStatus(null);
     setError(null);
     try {
-      const res = await fetch("/api/scrape/races", {
+      const res = await fetch(`${API}/scrape/races`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
