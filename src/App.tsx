@@ -1,137 +1,311 @@
 import { useState } from "react";
-import { Search, Download, Play, Settings as SettingsIcon, History, Calendar } from "lucide-react";
-import { motion } from "framer-motion";
+import { Play, Download, Calendar, ChevronDown, ChevronRight, Loader } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+type Runner = {
+  number: number;
+  name: string;
+  form: string;
+  draw: number | null;
+  jockey: string;
+  trainer: string;
+  rpr: number | null;
+  ts: number | null;
+  ofr: number | null;
+  silk_url: string | null;
+  non_runner: boolean;
+  lbs: number | null;
+};
+
+type Race = {
+  race_id: number;
+  race_name: string;
+  race_type: string;
+  distance: string;
+  going: string;
+  field_size: number | null;
+  pattern: string;
+  race_class: number | string | null;
+  age_band: string | null;
+  prize: string | null;
+  handicap: boolean;
+  runners: Runner[];
+};
+
+type Racecards = {
+  [region: string]: {
+    [course: string]: {
+      [off_time: string]: Race;
+    };
+  };
+};
+
+function RaceRow({ offTime, race }: { offTime: string; race: Race }) {
+  const [open, setOpen] = useState(false);
+  const activeRunners = race.runners.filter((r) => !r.non_runner);
+
+  return (
+    <div className="border-b border-[#141414]">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full text-left px-4 py-3 flex items-center gap-4 hover:bg-[#141414] hover:text-[#E4E3E0] transition-colors group"
+      >
+        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        <span className="data-value text-lg w-16">{offTime}</span>
+        <span className="font-bold uppercase flex-1">{race.race_name}</span>
+        <span className="col-header normal-case opacity-60">{race.race_type}</span>
+        <span className="col-header normal-case opacity-60">{race.distance}</span>
+        <span className="col-header normal-case opacity-60">{race.going}</span>
+        {race.pattern && (
+          <span className="text-[10px] font-bold border border-current px-1">{race.pattern}</span>
+        )}
+        <span className="col-header normal-case opacity-60">{activeRunners.length} runners</span>
+        {race.prize && <span className="col-header normal-case opacity-60">{race.prize}</span>}
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <table className="w-full text-sm border-t border-[#141414]">
+              <thead>
+                <tr className="bg-[#141414] text-[#E4E3E0]">
+                  <th className="col-header text-left px-3 py-2 text-[#E4E3E0]">#</th>
+                  <th className="col-header text-left px-3 py-2 text-[#E4E3E0]">Horse</th>
+                  <th className="col-header text-left px-3 py-2 text-[#E4E3E0]">Form</th>
+                  <th className="col-header text-left px-3 py-2 text-[#E4E3E0]">Draw</th>
+                  <th className="col-header text-left px-3 py-2 text-[#E4E3E0]">Wgt</th>
+                  <th className="col-header text-left px-3 py-2 text-[#E4E3E0]">Jockey</th>
+                  <th className="col-header text-left px-3 py-2 text-[#E4E3E0]">Trainer</th>
+                  <th className="col-header text-right px-3 py-2 text-[#E4E3E0]">RPR</th>
+                  <th className="col-header text-right px-3 py-2 text-[#E4E3E0]">TS</th>
+                  <th className="col-header text-right px-3 py-2 text-[#E4E3E0]">OFR</th>
+                </tr>
+              </thead>
+              <tbody>
+                {race.runners.map((runner, i) => (
+                  <tr
+                    key={i}
+                    className={`border-t border-[#141414] hover:bg-[#f0efec] transition-colors ${
+                      runner.non_runner ? "opacity-30 line-through" : ""
+                    }`}
+                  >
+                    <td className="data-value px-3 py-2">{runner.number}</td>
+                    <td className="px-3 py-2 font-bold uppercase">{runner.name}</td>
+                    <td className="data-value px-3 py-2 tracking-wider">{runner.form || "—"}</td>
+                    <td className="data-value px-3 py-2">{runner.draw ?? "—"}</td>
+                    <td className="data-value px-3 py-2">{runner.lbs ?? "—"}</td>
+                    <td className="px-3 py-2">{runner.jockey}</td>
+                    <td className="px-3 py-2 opacity-70">{runner.trainer}</td>
+                    <td className="data-value px-3 py-2 text-right">{runner.rpr ?? "—"}</td>
+                    <td className="data-value px-3 py-2 text-right">{runner.ts ?? "—"}</td>
+                    <td className="data-value px-3 py-2 text-right">{runner.ofr ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function CourseSection({ course, races }: { course: string; races: { [off_time: string]: Race } }) {
+  const sortedTimes = Object.keys(races).sort();
+  return (
+    <div className="border border-[#141414] mb-6">
+      <div className="bg-[#141414] text-[#E4E3E0] px-4 py-2">
+        <h3 className="font-bold uppercase tracking-widest text-sm">{course}</h3>
+      </div>
+      {sortedTimes.map((time) => (
+        <RaceRow key={time} offTime={time} race={races[time]} />
+      ))}
+    </div>
+  );
+}
 
 export default function App() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [isScraping, setIsScraping] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
+  const [region, setRegion] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [scraping, setScraping] = useState(false);
+  const [racecards, setRacecards] = useState<Racecards | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [scrapeStatus, setScrapeStatus] = useState<string | null>(null);
 
-  const handleScrape = async () => {
-    setIsScraping(true);
+  const loadRacecards = async () => {
+    setLoading(true);
+    setError(null);
+    setRacecards(null);
     try {
-      const response = await fetch("/api/scrape/races", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dates: [date] }),
-      });
-      const data = await response.json();
-      console.log(data);
-      setResults([
-        { id: "1", course: "Ascot", time: "14:30", runners: 12, status: "Completed" },
-        { id: "2", course: "Cheltenham", time: "15:05", runners: 8, status: "Completed" },
-        { id: "3", course: "Newmarket", time: "15:40", runners: 15, status: "Completed" },
-      ]);
-    } catch (error) {
-      console.error("Scrape failed", error);
+      const url = region
+        ? `/api/racecards/${date}?region=${region.toLowerCase()}`
+        : `/api/racecards/${date}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.message) {
+        setError(data.message);
+      } else {
+        setRacecards(data);
+      }
+    } catch (e: any) {
+      setError(e.message || "Failed to load racecards");
     } finally {
-      setIsScraping(false);
+      setLoading(false);
     }
   };
+
+  const scrapeRaces = async () => {
+    setScraping(true);
+    setScrapeStatus(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/scrape/races", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dates: [date],
+          regions: region ? [region.toLowerCase()] : undefined,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setScrapeStatus(data.message + (data.output_file ? ` → ${data.output_file}` : ""));
+    } catch (e: any) {
+      setError(e.message || "Scrape failed");
+    } finally {
+      setScraping(false);
+    }
+  };
+
+  const regions = racecards ? Object.keys(racecards).sort() : [];
+  const totalRaces = racecards
+    ? regions.reduce(
+        (acc, r) =>
+          acc +
+          Object.values(racecards[r]).reduce((a, c) => a + Object.keys(c).length, 0),
+        0
+      )
+    : 0;
 
   return (
     <main className="min-h-screen p-8 max-w-7xl mx-auto">
       <header className="flex justify-between items-end border-b border-[#141414] pb-8 mb-12">
         <div>
           <h1 className="text-4xl font-bold tracking-tighter uppercase mb-2">RPScrape.v2</h1>
-          <p className="font-serif italic opacity-60">High-precision horse racing data extraction engine</p>
+          <p className="font-serif italic opacity-60">
+            High-precision horse racing data extraction engine
+          </p>
         </div>
-        <div className="flex gap-4">
-          <button className="p-2 border border-[#141414] hover:bg-[#141414] hover:text-[#E4E3E0] transition-colors">
-            <SettingsIcon size={20} />
-          </button>
-          <button className="p-2 border border-[#141414] hover:bg-[#141414] hover:text-[#E4E3E0] transition-colors">
-            <History size={20} />
-          </button>
-        </div>
+        {racecards && (
+          <div className="text-right">
+            <div className="data-value text-2xl">{totalRaces}</div>
+            <div className="col-header normal-case">races loaded</div>
+          </div>
+        )}
       </header>
 
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+      <section className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
         <div className="border border-[#141414] p-6">
-          <label className="col-header mb-4 block">Target Date</label>
-          <div className="flex items-center gap-4">
-            <Calendar size={20} />
+          <label className="col-header mb-4 block">Date</label>
+          <div className="flex items-center gap-3">
+            <Calendar size={18} />
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="bg-transparent border-b border-[#141414] outline-none w-full data-value text-xl"
+              className="bg-transparent border-b border-[#141414] outline-none w-full data-value text-lg"
             />
           </div>
         </div>
 
         <div className="border border-[#141414] p-6">
-          <label className="col-header mb-4 block">Region Filter</label>
-          <select className="bg-transparent border-b border-[#141414] outline-none w-full data-value text-xl appearance-none">
-            <option>GB & IRE</option>
-            <option>GB ONLY</option>
-            <option>IRE ONLY</option>
-            <option>INTERNATIONAL</option>
+          <label className="col-header mb-4 block">Region</label>
+          <select
+            value={region}
+            onChange={(e) => setRegion(e.target.value)}
+            className="bg-transparent border-b border-[#141414] outline-none w-full data-value text-lg appearance-none"
+          >
+            <option value="">All Regions</option>
+            <option value="gb">GB</option>
+            <option value="ire">IRE</option>
+            <option value="eur">EUR</option>
+            <option value="usa">USA</option>
+            <option value="aus">AUS</option>
           </select>
         </div>
 
-        <div className="flex items-stretch">
-          <button
-            onClick={handleScrape}
-            disabled={isScraping}
-            className={`w-full flex items-center justify-center gap-4 text-2xl font-bold uppercase transition-all ${
-              isScraping
-                ? "bg-transparent text-[#141414] cursor-wait"
-                : "bg-[#141414] text-[#E4E3E0] hover:bg-transparent hover:text-[#141414] border border-[#141414]"
-            }`}
-          >
-            {isScraping ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-              >
-                <Search size={24} />
-              </motion.div>
-            ) : (
-              <Play size={24} />
-            )}
-            {isScraping ? "Scraping..." : "Initialize Scrape"}
-          </button>
-        </div>
+        <button
+          onClick={loadRacecards}
+          disabled={loading}
+          className={`border border-[#141414] p-6 flex items-center justify-center gap-3 font-bold uppercase text-lg transition-all ${
+            loading
+              ? "opacity-50 cursor-wait"
+              : "bg-[#141414] text-[#E4E3E0] hover:bg-transparent hover:text-[#141414]"
+          }`}
+        >
+          {loading ? <Loader size={20} className="animate-spin" /> : <Play size={20} />}
+          {loading ? "Loading..." : "Load Racecards"}
+        </button>
+
+        <button
+          onClick={scrapeRaces}
+          disabled={scraping}
+          className={`border border-[#141414] p-6 flex items-center justify-center gap-3 font-bold uppercase text-lg transition-all ${
+            scraping
+              ? "opacity-50 cursor-wait"
+              : "hover:bg-[#141414] hover:text-[#E4E3E0]"
+          }`}
+        >
+          {scraping ? <Loader size={20} className="animate-spin" /> : <Download size={20} />}
+          {scraping ? "Scraping..." : "Scrape Results"}
+        </button>
       </section>
 
-      <section className="border border-[#141414]">
-        <div className="data-row bg-[#141414] text-[#E4E3E0] hover:bg-[#141414] cursor-default">
-          <span className="col-header text-[#E4E3E0]">ID</span>
-          <span className="col-header text-[#E4E3E0]">Course</span>
-          <span className="col-header text-[#E4E3E0]">Off Time</span>
-          <span className="col-header text-[#E4E3E0]">Runners</span>
-          <span className="col-header text-[#E4E3E0]">Status</span>
+      {error && (
+        <div className="border border-red-600 text-red-600 p-4 mb-8 font-mono text-sm">
+          {error}
         </div>
+      )}
 
-        {results.length === 0 ? (
-          <div className="p-20 text-center opacity-30 italic font-serif">
-            No active scrape data. Initialize a request to begin.
-          </div>
-        ) : (
-          results.map((row) => (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              key={row.id}
-              className="data-row"
-            >
-              <span className="data-value">#{row.id}</span>
-              <span className="font-bold uppercase">{row.course}</span>
-              <span className="data-value">{row.time}</span>
-              <span className="data-value">{row.runners}</span>
-              <span className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full" />
-                <span className="text-[10px] uppercase font-bold">{row.status}</span>
-              </span>
-            </motion.div>
-          ))
-        )}
-      </section>
+      {scrapeStatus && (
+        <div className="border border-[#141414] p-4 mb-8 font-mono text-sm">
+          {scrapeStatus}
+        </div>
+      )}
 
-      <footer className="mt-12 flex justify-between items-center text-[10px] uppercase tracking-widest opacity-40">
+      {racecards && regions.length > 0 && (
+        <div>
+          {regions.map((reg) => (
+            <div key={reg} className="mb-10">
+              <h2 className="text-xs font-bold uppercase tracking-widest opacity-40 mb-4 border-b border-[#141414] pb-2">
+                {reg}
+              </h2>
+              {Object.keys(racecards[reg])
+                .sort()
+                .map((course) => (
+                  <CourseSection key={course} course={course} races={racecards[reg][course]} />
+                ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && !racecards && !error && (
+        <div className="p-20 text-center opacity-30 italic font-serif">
+          Select a date and load racecards to begin.
+        </div>
+      )}
+
+      <footer className="mt-12 flex justify-between items-center text-[10px] uppercase tracking-widest opacity-40 border-t border-[#141414] pt-6">
         <div>System Status: Operational</div>
-        <div>Last Update: {new Date().toISOString().slice(0, 16).replace("T", " ")} UTC</div>
         <div>Engine: Python 3.12 / FastAPI</div>
       </footer>
     </main>
