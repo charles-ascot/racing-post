@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 const API = import.meta.env.VITE_BACKEND_URL || "";
-import { Play, Download, Calendar, ChevronDown, ChevronRight, Loader } from "lucide-react";
+import { Play, Download, Calendar, ChevronDown, ChevronRight, Loader, FileSpreadsheet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Runner = {
@@ -217,6 +217,9 @@ export default function App() {
       {/* Header */}
       <header className="glass-panel flex justify-between items-end px-8 py-6 mb-8">
         <div>
+          <p className="text-xs font-bold uppercase tracking-[0.3em] mb-1 opacity-50" style={{ color: "#9D4EDD", fontFamily: "'Lexend', sans-serif" }}>
+            Chimera
+          </p>
           <h1
             className="gradient-text text-4xl font-bold tracking-tighter uppercase mb-1"
             style={{ fontFamily: "'Lexend', sans-serif" }}
@@ -305,8 +308,22 @@ export default function App() {
 
       {/* Scrape status */}
       {scrapeStatus && (
-        <div className="border border-[rgba(74,222,128,0.4)] bg-[rgba(74,222,128,0.08)] text-[#4ade80] p-4 mb-6 rounded-2xl text-sm backdrop-blur-sm font-mono">
-          {scrapeStatus}
+        <div className="flex items-center gap-4 border border-[rgba(74,222,128,0.4)] bg-[rgba(74,222,128,0.08)] p-4 mb-6 rounded-2xl backdrop-blur-sm">
+          <span className="text-[#4ade80] text-sm font-mono flex-1">{scrapeStatus}</span>
+          <a
+            href={`${API}/download/latest`}
+            download
+            className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold uppercase text-xs shrink-0 transition-all hover:opacity-80"
+            style={{
+              fontFamily: "'Lexend', sans-serif",
+              background: "linear-gradient(135deg, #00D4FF 0%, #0099FF 50%, #9D4EDD 100%)",
+              color: "#fff",
+              boxShadow: "0 4px 16px rgba(0,212,255,0.25)",
+            }}
+          >
+            <FileSpreadsheet size={14} />
+            Excel
+          </a>
         </div>
       )}
 

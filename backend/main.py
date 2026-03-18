@@ -1,11 +1,15 @@
+import csv
+import io
 import os
 import sys
 from datetime import date
+from pathlib import Path
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from openpyxl import Workbook
 from pydantic import BaseModel
 
 # Add scripts directory to sys.path to allow imports within scripts to work
@@ -29,6 +33,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Store the most recently scraped file path in memory
+latest_output_path: Optional[str] = None
+
+
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
@@ -36,6 +44,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
         content={"detail": str(exc)},
         headers={"Access-Control-Allow-Origin": "*"},
     )
+
 
 class ScrapeRequest(BaseModel):
     dates: Optional[List[str]] = None
@@ -45,12 +54,16 @@ class ScrapeRequest(BaseModel):
     race_type: str = "all"
     clean: bool = False
 
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to RPScrape API"}
 
+
 @app.post("/scrape/races")
 async def scrape_races_endpoint(request: ScrapeRequest):
+    global latest_output_path
+
     settings = Settings()
     if settings.toml is None:
         raise HTTPException(status_code=500, detail="Settings not loaded")
@@ -58,19 +71,9 @@ async def scrape_races_endpoint(request: ScrapeRequest):
     gzip_output = settings.toml.get('gzip_output', False)
     file_writer = writer_gzip if gzip_output else writer_csv
 
-    # Prepare arguments for build_paths
-    # We need to construct a "request" object that build_paths expects
-    # In rpscrape.py, it's args.request which is a string or similar
-    # Actually, build_paths takes a RequestKey or similar? 
-    # Let's check paths.py again.
-    
-    # Simulate the ArgParser logic to get tracks and dates
     from scripts.utils.argparser import ArgParser
     parser = ArgParser()
-    
-    # We'll manually construct what ArgParser.parse would return
-    # This is a bit hacky, but let's try to make it work with existing logic
-    
+
     client = NetworkClient(
         email=os.getenv('EMAIL'),
         auth_state=os.getenv('AUTH_STATE'),
@@ -81,7 +84,6 @@ async def scrape_races_endpoint(request: ScrapeRequest):
     tracks = []
     if request.courses:
         for course in request.courses:
-            # Find course ID
             for c_id, c_name in get_courses():
                 if c_name.lower() == course.lower():
                     tracks.append((c_id, c_name))
@@ -91,13 +93,8 @@ async def scrape_races_endpoint(request: ScrapeRequest):
             for c_id, c_name in get_courses():
                 if get_region(c_id) == region.upper():
                     tracks.append((c_id, c_name))
-    else:
-        # Default to all GB/IRE if nothing specified? 
-        # Or just use what's in the request
-        pass
 
     if not tracks:
-        # If no tracks specified, maybe use all?
         for c_id, c_name in get_courses():
             tracks.append((c_id, c_name))
 
@@ -105,7 +102,7 @@ async def scrape_races_endpoint(request: ScrapeRequest):
     if request.dates:
         for d_str in request.dates:
             parsed_dates.extend(get_dates(d_str))
-    
+
     # Build a filename from the request scope
     if request.dates:
         scope_kind = 'date'
@@ -137,15 +134,47 @@ async def scrape_races_endpoint(request: ScrapeRequest):
     if not race_urls:
         return {"message": "No races found for the given criteria"}
 
-    # Run the scraper
-    # Note: This is synchronous and might take a long time. 
-    # In a real app, you'd use BackgroundTasks or Celery.
     scrape_races(race_urls, paths, request.race_type, client, file_writer)
+
+    latest_output_path = str(paths.output.resolve())
 
     return {
         "message": "Scraping completed",
-        "output_file": str(paths.output.resolve())
+        "output_file": latest_output_path,
     }
+
+
+@app.get("/download/latest")
+async def download_latest():
+    if latest_output_path is None:
+        raise HTTPException(status_code=404, detail="No scraped file available yet")
+
+    csv_path = Path(latest_output_path)
+    if not csv_path.exists():
+        raise HTTPException(status_code=404, detail="Output file not found on server")
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Races"
+
+    with open(csv_path, newline="", encoding="utf-8") as f:
+        for row in csv.reader(f):
+            ws.append(row)
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    xlsx_name = csv_path.stem + ".xlsx"
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f'attachment; filename="{xlsx_name}"',
+            "Access-Control-Allow-Origin": "*",
+        },
+    )
+
 
 @app.get("/racecards/{date}")
 async def get_racecards(date: str, region: Optional[str] = None):
@@ -154,18 +183,19 @@ async def get_racecards(date: str, region: Optional[str] = None):
         auth_state=os.getenv('AUTH_STATE'),
         access_token=os.getenv('ACCESS_TOKEN'),
     )
-    
+
     config = load_field_config()
     dates = [date]
-    
+
     race_urls = get_racecard_urls(client, dates, region)
-    
+
     if not race_urls or date not in race_urls:
         return {"message": f"No racecards found for {date}"}
-        
+
     racecards = scrape_racecards(race_urls, date, config, client)
-    
+
     return racecards
+
 
 if __name__ == "__main__":
     import uvicorn
