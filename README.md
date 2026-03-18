@@ -1,6 +1,11 @@
 # RPScrape v2 - Full Stack Setup
 
-This project consists of a Python FastAPI backend and a Next.js frontend.
+This project consists of: A Python FastAPI backend and a Next.js frontend.
+
+## Deployed URLs
+
+- **Backend (Cloud Run):** https://racing-post-950990732577.europe-west2.run.app
+- **Frontend (Cloudflare Pages):** _to be added_
 
 ## Prerequisites
 
