@@ -106,9 +106,26 @@ async def scrape_races_endpoint(request: ScrapeRequest):
         for d_str in request.dates:
             parsed_dates.extend(get_dates(d_str))
     
-    # Construct a request key for build_paths
-    # In rpscrape, it uses the first date/year and course/region as a key
-    req_key = "api_request" # Placeholder
+    # Build a filename from the request scope
+    if request.dates:
+        scope_kind = 'date'
+        scope_value = request.dates[0].replace('-', '_')
+        filename = request.dates[0].replace('-', '_')
+    elif request.years:
+        scope_kind = 'year'
+        scope_value = request.years[0]
+        filename = request.years[0]
+    else:
+        scope_kind = 'year'
+        scope_value = str(date.today().year)
+        filename = str(date.today().year)
+
+    req_key = RequestKey(
+        scope_kind=scope_kind,
+        scope_value=scope_value,
+        race_type=request.race_type,
+        filename=filename,
+    )
     paths = build_paths(req_key, gzip_output)
 
     if request.dates:
