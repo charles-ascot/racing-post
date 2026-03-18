@@ -155,6 +155,7 @@ export default function App() {
   const [racecards, setRacecards] = useState<Racecards | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scrapeStatus, setScrapeStatus] = useState<string | null>(null);
+  const [outputFile, setOutputFile] = useState<string | null>(null);
 
   const loadRacecards = async () => {
     setLoading(true);
@@ -182,6 +183,7 @@ export default function App() {
   const scrapeRaces = async () => {
     setScraping(true);
     setScrapeStatus(null);
+    setOutputFile(null);
     setError(null);
     try {
       const res = await fetch(`${API}/scrape/races`, {
@@ -195,6 +197,7 @@ export default function App() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setScrapeStatus(data.message + (data.output_file ? ` → ${data.output_file}` : ""));
+      if (data.output_file) setOutputFile(data.output_file);
     } catch (e: any) {
       setError(e.message || "Scrape failed");
     } finally {
@@ -311,7 +314,7 @@ export default function App() {
         <div className="flex items-center gap-4 border border-[rgba(74,222,128,0.4)] bg-[rgba(74,222,128,0.08)] p-4 mb-6 rounded-2xl backdrop-blur-sm">
           <span className="text-[#4ade80] text-sm font-mono flex-1">{scrapeStatus}</span>
           <a
-            href={`${API}/download/latest`}
+            href={`${API}/download?path=${encodeURIComponent(outputFile || "")}`}
             download
             className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold uppercase text-xs shrink-0 transition-all hover:opacity-80"
             style={{

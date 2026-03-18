@@ -144,14 +144,20 @@ async def scrape_races_endpoint(request: ScrapeRequest):
     }
 
 
-@app.get("/download/latest")
-async def download_latest():
-    if latest_output_path is None:
-        raise HTTPException(status_code=404, detail="No scraped file available yet")
+@app.get("/download")
+async def download_file(path: str = Query(...)):
+    # Resolve and validate the path is within the data directory
+    data_root = Path(__file__).resolve().parent / "data"
+    try:
+        csv_path = Path(path).resolve()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid path")
 
-    csv_path = Path(latest_output_path)
+    if not str(csv_path).startswith(str(data_root)):
+        raise HTTPException(status_code=403, detail="Access denied")
+
     if not csv_path.exists():
-        raise HTTPException(status_code=404, detail="Output file not found on server")
+        raise HTTPException(status_code=404, detail="File not found on server")
 
     wb = Workbook()
     ws = wb.active
