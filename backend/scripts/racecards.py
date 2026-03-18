@@ -237,45 +237,46 @@ def parse_runners(
 
         # Equipment
         if should_include_group('equipment'):
-            runner.headgear = runner_json['rpHorseHeadgearCode']
-            runner.headgear_first = runner_json['firstTime']
-            runner.gelding_first_time = runner_json['geldingFirstTime']
-            runner.wind_surgery_first = runner_json['windSurgeryFirstTime']
-            runner.wind_surgery_second = runner_json['windSurgerySecondTime']
+            runner.headgear = runner_json.get('rpHorseHeadgearCode')
+            runner.headgear_first = runner_json.get('firstTime', False)
+            runner.gelding_first_time = runner_json.get('geldingFirstTime', False)
+            runner.wind_surgery_first = runner_json.get('windSurgeryFirstTime', False)
+            runner.wind_surgery_second = runner_json.get('windSurgerySecondTime', False)
 
         # Breeding
         if should_include_group('breeding'):
-            runner.sire = clean_string(runner_json['sireName'])
-            runner.sire_id = runner_json['sireId']
-            runner.sire_region = runner_json['sireCountry']
-            runner.dam = clean_string(runner_json['damName'])
-            runner.dam_id = runner_json['damId']
-            runner.dam_region = runner_json['damCountry']
-            runner.damsire = clean_string(runner_json['damsireName'])
-            runner.damsire_id = runner_json['damsireId']
-            runner.damsire_region = runner_json['damsireCountry']
-            runner.breeder = clean_string(runner_json['breederName'])
-            runner.breeder_id = runner_json['breederUid']
+            runner.sire = clean_string(runner_json.get('sireName') or '')
+            runner.sire_id = runner_json.get('sireId')
+            runner.sire_region = runner_json.get('sireCountry')
+            runner.dam = clean_string(runner_json.get('damName') or '')
+            runner.dam_id = runner_json.get('damId')
+            runner.dam_region = runner_json.get('damCountry')
+            runner.damsire = clean_string(runner_json.get('damsireName') or '')
+            runner.damsire_id = runner_json.get('damsireId')
+            runner.damsire_region = runner_json.get('damsireCountry')
+            runner.breeder = clean_string(runner_json.get('breederName') or '')
+            runner.breeder_id = runner_json.get('breederUid')
 
         # Ownership
         if should_include_group('ownership'):
-            runner.owner = clean_string(runner_json['ownerName'])
-            runner.owner_id = runner_json['ownerUid']
+            runner.owner = clean_string(runner_json.get('ownerName') or '')
+            runner.owner_id = runner_json.get('ownerUid')
 
         # Comments
         if should_include_group('comments'):
-            runner.comment = runner_json['diomed']
-            runner.spotlight = runner_json['spotlight']
+            runner.comment = runner_json.get('diomed')
+            runner.spotlight = runner_json.get('spotlight')
 
         # Status
         if should_include_group('status'):
-            runner.non_runner = runner_json['nonRunner']
-            runner.reserve = runner_json['irishReserve']
+            runner.non_runner = runner_json.get('nonRunner', False)
+            runner.reserve = runner_json.get('irishReserve', False)
 
         # Silk
         if should_include_group('silk'):
-            runner.silk_path = runner_json['silkImagePath']
-            runner.silk_url = f'https://www.rp-assets.com/svg/{runner_json["silkImagePath"]}.svg'
+            silk = runner_json.get('silkImagePath')
+            runner.silk_path = silk
+            runner.silk_url = f'https://www.rp-assets.com/svg/{silk}.svg' if silk else None
 
         # Profile data
         if should_include_group('profile') and profile:
