@@ -71,4 +71,4 @@ docker run -p 8000:3000 rpscrape-backend
 - **High-performance scraping**: Uses `curl_cffi` for robust HTTP requests.
 - **Real-time updates**: Track scraping progress via the dashboard.
 - **Flexible configuration**: Customize fields and settings via TOML files.
-- **Modern UI**: Clean, technical dashboard built with Next.js and Tailwind CSS.
+- **Modern UI**: Clean, technical dashboard built with Next.js and Tailwind CSS..
