@@ -162,10 +162,7 @@ export default function App() {
     setError(null);
     setRacecards(null);
     try {
-      const url = region
-        ? `${API}/racecards/${date}?region=${region.toLowerCase()}`
-        : `${API}/racecards/${date}`;
-      const res = await fetch(url);
+      const res = await fetch(`${API}/racecards/${date}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.message) {
@@ -205,7 +202,10 @@ export default function App() {
     }
   };
 
-  const regions = racecards ? Object.keys(racecards).sort() : [];
+  const allRegions = racecards ? Object.keys(racecards).sort() : [];
+  const regions = region
+    ? allRegions.filter((r) => r.toLowerCase() === region.toLowerCase())
+    : allRegions;
   const totalRaces = racecards
     ? regions.reduce(
         (acc, r) =>
@@ -311,22 +311,30 @@ export default function App() {
 
       {/* Scrape status */}
       {scrapeStatus && (
-        <div className="flex items-center gap-4 border border-[rgba(74,222,128,0.4)] bg-[rgba(74,222,128,0.08)] p-4 mb-6 rounded-2xl backdrop-blur-sm">
-          <span className="text-[#4ade80] text-sm font-mono flex-1">{scrapeStatus}</span>
-          <a
-            href={`${API}/download?path=${encodeURIComponent(outputFile || "")}`}
-            download
-            className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold uppercase text-xs shrink-0 transition-all hover:opacity-80"
-            style={{
-              fontFamily: "'Lexend', sans-serif",
-              background: "linear-gradient(135deg, #00D4FF 0%, #0099FF 50%, #9D4EDD 100%)",
-              color: "#fff",
-              boxShadow: "0 4px 16px rgba(0,212,255,0.25)",
-            }}
-          >
-            <FileSpreadsheet size={14} />
-            Excel
-          </a>
+        <div className={`flex items-center gap-4 border p-4 mb-6 rounded-2xl backdrop-blur-sm ${
+          outputFile
+            ? "border-[rgba(74,222,128,0.4)] bg-[rgba(74,222,128,0.08)]"
+            : "border-[rgba(255,165,0,0.4)] bg-[rgba(255,165,0,0.08)]"
+        }`}>
+          <span className={`text-sm font-mono flex-1 ${outputFile ? "text-[#4ade80]" : "text-[#ffaa44]"}`}>
+            {scrapeStatus}
+          </span>
+          {outputFile && (
+            <a
+              href={`${API}/download?path=${encodeURIComponent(outputFile)}`}
+              download
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold uppercase text-xs shrink-0 transition-all hover:opacity-80"
+              style={{
+                fontFamily: "'Lexend', sans-serif",
+                background: "linear-gradient(135deg, #00D4FF 0%, #0099FF 50%, #9D4EDD 100%)",
+                color: "#fff",
+                boxShadow: "0 4px 16px rgba(0,212,255,0.25)",
+              }}
+            >
+              <FileSpreadsheet size={14} />
+              Excel
+            </a>
+          )}
         </div>
       )}
 
