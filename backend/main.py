@@ -23,8 +23,13 @@ from scripts.utils.settings import Settings
 from scripts.utils.date import get_dates
 from scripts.utils.course import courses as get_courses
 from scripts.utils.region import get_region
+from api import router as lay_engine_router
 
-app = FastAPI(title="RPScrape API")
+app = FastAPI(
+    title="RPScrape / Lay Engine API",
+    description="Racing Post racecard and results data. Lay Engine endpoints at /api/v1/.",
+    version="1.0",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,6 +37,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(lay_engine_router)
 
 # Store the most recently scraped file path in memory
 latest_output_path: Optional[str] = None
